@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Optional;
 
@@ -17,8 +18,8 @@ import java.util.Optional;
 @AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeRepository employeeRepository;
-    private RestTemplate restTemplate;
-    //private WebClient webClient;
+    //private RestTemplate restTemplate;
+    private WebClient webClient;
     @Override
     public EmployeeDTO saveEmployee(EmployeeDTO employeeDto) {
         Employee employee =  new Employee(
@@ -42,13 +43,27 @@ public class EmployeeServiceImpl implements EmployeeService {
     public APIResponseDTO getEmployeeById(long empId) {
         Optional<Employee> employeeOptional = employeeRepository.findById(empId);
         Employee employee = employeeOptional.get();
-
-        ResponseEntity<DepartmentDTO> forEntity = restTemplate.getForEntity("http://localhost:8085/api/department//" + employee.getDepartmentCode(), DepartmentDTO.class);
+        /*
+        //Rest template start
+        ResponseEntity<DepartmentDTO> forEntity = restTemplate.getForEntity("http://localhost:8085/api/department/" + employee.getDepartmentCode(), DepartmentDTO.class);
         DepartmentDTO departmentDto = forEntity.getBody();
+        //Rest template
+*/
+        //Web clint start
+
+        DepartmentDTO departmentDTO = webClient.get()
+                .uri("http://localhost:8085/api/department/" + employee.getDepartmentCode())
+                .retrieve()
+                .bodyToMono(DepartmentDTO.class).block();
+        //web clint end
+
+
+
+
 
         EmployeeDTO employeeDto =  new EmployeeDTO(employee.getId(),employee.getFirstName(),employee.getLastName(),employee.getEmail(),employee.getDepartmentCode());
 
-        APIResponseDTO apiResponseDTO = new APIResponseDTO(employeeDto,departmentDto);
+        APIResponseDTO apiResponseDTO = new APIResponseDTO(employeeDto,departmentDTO);
 
         return apiResponseDTO;
 }
